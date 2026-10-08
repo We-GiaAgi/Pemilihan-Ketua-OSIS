@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pemilihan Ketua OSIS</title>
+  <link rel="stylesheet" href="2-tampilan/style.css" />
+</head>
+<body>
+
+<!-- ================= POPUP: KODE AKSES ================= -->
+<div id="popupKodeAkses" class="popup">
+  <div class="popup-isi">
+    <h3>Akses Pemilihan</h3>
+    <p>Masukkan kode akses untuk melanjutkan</p>
+    <input type="password" id="inputKodeAkses" placeholder="Kode akses..." />
+    <p id="errorKode" class="error hidden">Kode akses salah!</p>
+    <button class="tombol-utama" onclick="cobaMasuk()">Masuk</button>
+  </div>
+</div>
+
+<!-- ================= POPUP: DAFTAR BILIK ================= -->
+<div id="popupDaftarBilik" class="popup hidden">
+  <div class="popup-isi">
+    <h3>📱 Daftarkan Bilik</h3>
+    <p>Pilih nomor bilik (1–10) untuk perangkat ini</p>
+    <input type="number" id="inputNomorBilik" min="1" max="10" placeholder="Nomor bilik..." />
+    <p id="errorBilik" class="error hidden"></p>
+    <button class="tombol-utama" onclick="daftarkanBilik()">Daftarkan</button>
+  </div>
+</div>
+
+<!-- ================= HEADER ================= -->
+<header class="header hidden">
+  <h1>🗳️ Pemilihan Ketua OSIS</h1>
+  <p>Pilih pemimpin terbaik untuk masa depan sekolah kita</p>
+  <p id="labelBilik" class="label-bilik"></p>
+</header>
+
+<!-- ================= TOTAL SUARA ================= -->
+<div id="barTotal" class="bar-total hidden">
+  👥 <span id="teksTotal">Total Pemilih: 0</span>
+</div>
+
+<!-- ================= SPONSOR ================= -->
+<section class="section hidden" id="sectionSponsor">
+  <p class="total-pemilih" id="totalPemilihAtas">Total Pemilih: 0</p>
+  <h2 class="judul">Didukung Oleh</h2>
+  <div class="sponsor-grid" id="sponsorGrid"></div>
+</section>
+
+<!-- ================= KANDIDAT ================= -->
+<section class="section hidden" id="sectionKandidat">
+  <h2 class="judul">Kandidat Ketua OSIS</h2>
+  <p class="sub-judul">Kenali Visi Setiap Kandidat</p>
+  <div class="kandidat-grid" id="kandidatGrid"></div>
+
+  <div class="golput">
+    <div class="golput-icon">❌</div>
+    <div>
+      <h3>Tidak Memilih Siapapun (Golput)</h3>
+      <p>Jika Anda tidak ingin memilih salah satu kandidat di atas, pilih opsi ini.</p>
+      <button class="tombol-golput" onclick="pilihGolput()">PILIH GOLPUT</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOMBOL ADMIN ================= -->
+<section class="section-admin hidden">
+  <button class="tombol-admin" onclick="bukaLoginAdmin()">🛡️ Admin Panel</button>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer hidden">
+  <p>© 2025 Pemilihan Ketua OSIS — Sistem Voting Digital</p>
+</footer>
+
+<!-- ================= POPUP: KONFIRMASI PILIH ================= -->
+<div id="popupKonfirmasi" class="popup hidden">
+  <div class="popup-isi">
+    <h3>Konfirmasi Pilihan</h3>
+    <p>Apakah Anda yakin ingin memilih <b id="namaDipilih"></b>?</p>
+    <div class="tombol-baris">
+      <button class="tombol-batal" onclick="batalPilih()">Batal</button>
+      <button class="tombol-utama" onclick="konfirmasiPilih()">Ya, Pilih</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POPUP: KONFIRMASI GOLPUT ================= -->
+<div id="popupKonfirmasiGolput" class="popup hidden">
+  <div class="popup-isi">
+    <h3>Konfirmasi Golput</h3>
+    <p>Apakah Anda yakin <b>tidak memilih siapapun</b>?</p>
+    <div class="tombol-baris">
+      <button class="tombol-batal" onclick="batalPilih()">Batal</button>
+      <button class="tombol-utama" onclick="konfirmasiGolput()">Ya, Golput</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POPUP: LOGIN ADMIN ================= -->
+<div id="popupLoginAdmin" class="popup hidden">
+  <div class="popup-isi">
+    <h3>Admin Panel</h3>
+    <p>Masukkan kode admin</p>
+    <input type="password" id="inputKodeAdmin" placeholder="Kode admin..." />
+    <p id="errorAdmin" class="error hidden">Kode admin salah!</p>
+    <div class="tombol-baris">
+      <button class="tombol-batal" onclick="tutupLoginAdmin()">Batal</button>
+      <button class="tombol-utama" onclick="cobaLoginAdmin()">Masuk</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POPUP: PROSES & SUKSES ================= -->
+<div id="popupProses" class="popup hidden">
+  <div class="popup-isi tengah">
+    <div class="spinner"></div>
+    <p>Memproses suara Anda...</p>
+  </div>
+</div>
+
+<div id="popupSukses" class="popup hidden">
+  <div class="popup-isi tengah">
+    <div class="cek-lingkaran">✓</div>
+    <h3>Suara Berhasil Dikirim!</h3>
+    <p>Terima kasih. Silakan pemilih berikutnya.</p>
+  </div>
+</div>
+
+<!-- ================= PANEL ADMIN ================= -->
+<div id="panelAdmin" class="panel-admin hidden">
+  <div class="admin-header">
+    <h2>Hasil Pemilihan Ketua OSIS</h2>
+    <div class="admin-tombol">
+      <button class="tb-putih" onclick="muatAdmin()">🔄 Refresh</button>
+      <button class="tb-putih" onclick="exportCSV()">📊 Export CSV</button>
+      <button class="tb-merah" onclick="resetBilik()">🔄 Reset Bilik</button>
+      <button class="tb-putih" onclick="keluarAdmin()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- Ringkasan atas -->
+  <div class="results-summary">
+    <div class="summary-item">👥 Total: <b id="adminTotal">0</b></div>
+    <div class="summary-item">✅ Pemilih Aktif: <b id="adminAktif">0</b></div>
+    <div class="summary-item">❌ Golput: <b id="adminGolput">0</b></div>
+    <div class="summary-item">📝 Log: <b id="adminLogCount">0</b></div>
+    <div class="summary-item">🚨 Duplikat: <b id="adminDuplikatJumlah">0</b></div>
+    <div class="summary-item">🕒 Update: <b id="adminLastUpdate">-</b></div>
+  </div>
+
+  <!-- Statistik performa -->
+  <div class="performance-stats">
+    <h3>📈 Statistik Performa</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="adminVotesPerMinute">0</div>
+        <div class="stat-label">Suara/Menit</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="adminStorage">0KB</div>
+        <div class="stat-label">Storage Lokal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="adminPending">0</div>
+        <div class="stat-label">Belum Terkirim</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="adminTotalBilik">0</div>
+        <div class="stat-label">Bilik Aktif</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Peringatan duplikat -->
+  <div id="peringatanDuplikat" class="peringatan hidden">
+    🚨 <b>PERHATIAN:</b> Ada suara duplikat yang tidak dihitung di total.
+    Semua suara tetap tersimpan di Google Sheets sebagai bukti asli.
+  </div>
+
+  <!-- Pemenang sementara -->
+  <div id="adminPemenang" class="winner-card hidden">
+    <div class="winner-icon">🏆</div>
+    <h3>Pemenang Sementara</h3>
+    <div class="winner-name" id="adminPemenangNama"></div>
+    <div class="winner-votes" id="adminPemenangVotes"></div>
+  </div>
+
+  <!-- Hasil per kandidat dengan progress bar -->
+  <div id="adminHasil" class="results-container"></div>
+
+  <!-- Daftar bilik -->
+  <div class="recent-logs-section">
+    <h3>🏛️ Daftar Bilik Terdaftar</h3>
+    <div id="adminBilik" class="recent-logs">
+      <div class="log-entry">Memuat...</div>
+    </div>
+  </div>
+
+  <!-- Hitung suara manual per bilik -->
+  <div class="recent-logs-section">
+    <h3>🧮 Hitung Suara Manual per Bilik</h3>
+    <p class="info-hitung">
+      <b id="infoJumlahBilik">0 bilik terdaftar</b> —
+      Buka tiap bilik untuk melihat bukti suara. Setelah <b>semua bilik dibuka</b>,
+      tombol hitung total akan aktif.
+    </p>
+    <div id="hitungBilikGrid" class="bilik-hitung-grid"></div>
+
+    <div class="hitung-aksi">
+      <button id="tombolHitungTotal" class="tb-hitung terkunci"
+              onclick="hitungTotalKeseluruhan()" disabled>
+        🔒 Buka semua bilik dulu
+      </button>
+    </div>
+  </div>
+
+  <!-- Log duplikat -->
+  <div class="recent-logs-section">
+    <h3>🚨 Log Suara Duplikat</h3>
+    <div id="adminDuplikat" class="recent-logs">
+      <div class="log-entry">Tidak ada suara duplikat ✓</div>
+    </div>
+  </div>
+
+  <!-- Log voting terbaru -->
+  <div class="recent-logs-section">
+    <h3>📝 10 Data Voting Terbaru</h3>
+    <div id="adminRecentLogs" class="recent-logs">
+      <div class="log-entry">Belum ada data</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POPUP: BUKTI PER BILIK ================= -->
+<div id="popupBuktiBilik" class="popup hidden">
+  <div class="popup-isi besar">
+    <h3 id="judulBuktiBilik">Bukti Suara Bilik</h3>
+
+    <div class="ringkasan-bukti">
+      <span>✅ Asli: <b id="buktiAsli">0</b></span>
+      <span>🚨 Duplikat: <b id="buktiDuplikat">0</b></span>
+      <span>👥 Total: <b id="buktiTotal">0</b></span>
+    </div>
+
+    <div id="buktiList" class="bukti-list">
+      <div class="bilik-kartu">Memuat bukti suara...</div>
+    </div>
+
+    <button class="tombol-utama" onclick="tutupBuktiBilik()" style="margin-top:20px;">Tutup</button>
+  </div>
+</div>
+
+<!-- ================= POPUP: HITUNG TOTAL KESELURUHAN ================= -->
+<div id="popupHitungTotal" class="popup hidden">
+  <div class="popup-isi besar">
+    <h3>🧮 Hasil Hitung Total Keseluruhan</h3>
+    <div id="hitungTotalIsi">
+      <p>Menghitung...</p>
+    </div>
+    <button class="tombol-utama" onclick="tutupHitungTotal()" style="margin-top:20px;">Tutup</button>
+  </div>
+</div>
+
+<!-- ================= NOTIFIKASI KECIL ================= -->
+<div id="notif" class="notif hidden">
+  <span id="notifTeks"></span>
+</div>
+
+<!-- ================= LOAD SCRIPT (URUTAN WAJIB!) ================= -->
+<script src="3-program/1-pengaturan.js"></script>
+<script src="3-program/2-aplikasi.js"></script>
+<script src="3-program/3-admin.js"></script>
+
+</body>
+</html>
