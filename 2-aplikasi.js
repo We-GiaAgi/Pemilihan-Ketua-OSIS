@@ -1,9 +1,3 @@
-// ============================================================
-// 2-APLIKASI.JS — LOGIKA UTAMA VOTING
-// Dimuat SETELAH 1-pengaturan.js.
-// ============================================================
-
-// ---------- DATA YANG DISIMPAN DI HP ----------
 let dataSaya = {
   bilik: null,
   idPerangkat: null,
@@ -12,7 +6,7 @@ let dataSaya = {
   pilihanSekarang: null
 };
 
-// ---------- 1) SAAT HALAMAN DIBUKA ----------
+// 1) SAAT HALAMAN DIBUKA
 document.addEventListener("DOMContentLoaded", () => {
   const simpan = localStorage.getItem("pilketos");
   if (simpan) {
@@ -36,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ---------- 2) KODE AKSES ----------
+// 2) KODE AKSES
 function cobaMasuk() {
   const kode = document.getElementById("inputKodeAkses").value;
   if (kode === KODE_AKSES) {
@@ -67,7 +61,7 @@ function bukaHalamanUtama() {
   mulaiKirimOtomatis();
 }
 
-// ---------- 3) DAFTAR BILIK ----------
+// 3) DAFTAR BILIK
 async function daftarkanBilik() {
   const input = document.getElementById("inputNomorBilik");
   const nomor = parseInt(input.value, 10);
@@ -110,7 +104,7 @@ async function daftarkanBilik() {
   notif("Bilik " + dataSaya.bilik + " siap ✓");
 }
 
-// ---------- 4) TAMPILKAN KANDIDAT ----------
+// 4) TAMPILKAN KANDIDAT
 function tampilkanKandidat() {
   const wadah = document.getElementById("kandidatGrid");
   wadah.innerHTML = KANDIDAT.map(k => `
@@ -138,7 +132,7 @@ function tampilkanSponsor() {
   `).join("");
 }
 
-// ---------- 5) PROSES PILIH ----------
+//5) PROSES PILIH
 function pilihKandidat(id, nama) {
   if (!dataSaya.bilik) {
     notif("Daftarkan bilik dulu!", "error");
@@ -176,7 +170,7 @@ function konfirmasiGolput() {
   simpanSuara();
 }
 
-// ---------- 6) SIMPAN SUARA ----------
+//6) SIMPAN SUARA
 function simpanSuara() {
   const pilihan = dataSaya.pilihanSekarang;
   if (!pilihan) return;
@@ -193,7 +187,6 @@ function simpanSuara() {
     jenisSuara: pilihan.jenis
   };
 
-  // Simpan DULU ke localStorage (anti hilang kalau internet mati)
   dataSaya.daftarSuara.push(suara);
   dataSaya.totalSuara++;
   simpanData();
@@ -212,7 +205,7 @@ function simpanSuara() {
   }, 800);
 }
 
-// ---------- 7) KIRIM KE SERVER ----------
+// 7) KIRIM KE SERVER
 async function kirimKeServer() {
   if (dataSaya.daftarSuara.length === 0) return;
 
@@ -257,7 +250,7 @@ function mulaiKirimOtomatis() {
   });
 }
 
-// ---------- 8) TOTAL SUARA ----------
+// 8) TOTAL SUARA
 function perbaruiTotal() {
   const total = dataSaya.totalSuara || 0;
   document.getElementById("teksTotal").textContent = "Total Pemilih: " + total;
@@ -267,7 +260,7 @@ function perbaruiTotal() {
   }
 }
 
-// ---------- 9) ALAT BANTU ----------
+// 9) ALAT BANTU
 function simpanData() {
   localStorage.setItem("pilketos", JSON.stringify(dataSaya));
 }
