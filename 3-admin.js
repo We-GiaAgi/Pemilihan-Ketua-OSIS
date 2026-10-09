@@ -623,7 +623,7 @@ function tampilkanBuktiBilik(daftarSuara, bilik) {
   const wadah = document.getElementById("buktiList");
 
   if (!daftarSuara.length) {
-    wadah.innerHTML = '<div class="bilik-kartu">Belum ada suara dari bilik ini</div>';
+    wadah.innerHTML = '<div class="pesan-kosong">Belum ada suara dari bilik ini</div>';
     return;
   }
 
