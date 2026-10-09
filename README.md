@@ -26,48 +26,8 @@ Semua file ada di root repository:
 - server.gs - kode untuk Google Apps Script
 - kandidat-1.png, kandidat-2.png, kandidat-3.png - foto kandidat
 - logo-mpk.png, logo-osis.jpeg, logo-pemilos.png - logo sponsor
-
-## Cara Pasang
-
-### 1. Siapkan Google Sheets
-
-1. Buka sheets.google.com, buat spreadsheet baru
-2. Nama file bebas
-3. Buat dua sheet (tab di bawah) dengan nama persis:
-   - Suara
-   - Bilik
-
-4. Di sheet Suara, isi baris pertama (A sampai I):
-   waktu | idPerangkat | bilik | idKandidat | namaKandidat | jenisSuara | bilikTeks | idSesi | status
-
-5. Di sheet Bilik, isi baris pertama (A sampai E):
-   idPerangkat | bilik | waktuDaftar | terakhirAktif | totalSuara
-
-### 2. Setup Apps Script
-
-1. Di spreadsheet, klik menu Extensions, lalu Apps Script
-2. Hapus kode default
-3. Copy seluruh isi file server.gs, paste ke editor
-4. Ganti baris paling atas:
-   const KUNCI_SERVER = "GANTI_DENGAN_KATA_SANDI_RAHASIA";
-   Ganti dengan kata sandi rahasia Anda, contoh: pilketos2025rahasia
-5. Klik Ctrl+S untuk simpan
-6. Klik Deploy, lalu New Deployment
-7. Klik ikon gerigi, pilih Web app
-8. Isi form:
-   - Description: terserah
-   - Execute as: Me (email Anda)
-   - Who has access: Anyone
-9. Klik Deploy
-10. Muncul popup minta izin, klik Authorize access
-11. Pilih akun Google Anda
-12. Kalau muncul peringatan "Google hasn't verified this app", klik Advanced, lalu Go to project (unsafe)
-13. Klik Allow
-14. Copy URL yang muncul. Bentuknya seperti:
-    https://script.google.com/macros/s/AKfycb.../exec
-15. Simpan URL ini
-
-### 3. Isi Pengaturan Website
+- 
+### Isi Pengaturan Website
 
 Buka file 1-pengaturan.js, ubah 4 baris berikut:
 
@@ -80,21 +40,7 @@ Penting: KUNCI_SERVER di file ini harus sama persis
 dengan KUNCI_SERVER di server.gs. Kalau beda, data tidak
 akan masuk ke Google Sheets.
 
-### 4. Upload ke GitHub
-
-1. Buka github.com, login
-2. Klik tombol plus di kanan atas, pilih New repository
-3. Isi nama repository, contoh: pilketos
-4. Pilih Public
-5. Klik Create repository
-6. Upload semua file ke repository
-7. Setelah selesai, buka Settings, lalu Pages
-8. Di bagian Source, pilih Deploy from a branch
-9. Pilih branch main, folder / (root), klik Save
-10. Tunggu 1 sampai 2 menit
-11. Refresh halaman, akan muncul URL website Anda
-
-### 5. Hari Pemilihan
+### Hari Pemilihan
 
 1. Buka website di setiap perangkat (HP atau tablet)
 2. Satu perangkat untuk satu bilik
@@ -128,7 +74,7 @@ Semua warna diatur di file style.css, di bagian paling atas:
 
     :root {
       --warna-utama:       #6D28D9;
-      --warna-utama-gelap: #4C1D95;
+      --walrna-utama-gelap: #4C1D95;
       --warna-utama-muda:  #EDE9FE;
       --warna-aksen:       #F97316;
       --warna-aksen-gelap: #EA580C;
@@ -236,15 +182,6 @@ Untuk ubah batas waktu, edit di server.gs:
 
 Ubah 5000 jadi angka lain (dalam milidetik).
 Setelah ubah, deploy ulang Apps Script dengan version baru.
-
-## Masalah Umum
-
-Kode akses salah:
-Cek KODE_AKSES di 1-pengaturan.js
-
-Data tidak masuk Sheets:
-Pastikan ALAMAT_SERVER dan KUNCI_SERVER sama persis
-di 1-pengaturan.js dan server.gs.
 
 Bilik sudah dipakai:
 Satu nomor bilik hanya bisa dipakai satu perangkat.
