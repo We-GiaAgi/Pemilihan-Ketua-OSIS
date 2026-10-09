@@ -1,14 +1,9 @@
-// ============================================================
-// 3-ADMIN.JS — PANEL ADMIN
-// Dimuat SETELAH 2-aplikasi.js.
-// Fitur: hasil voting rapi, duplikat, hitung per bilik, reset, export.
-// ============================================================
+// Panel admin
+// Lihat hasil, hitung per bilik, reset, laporan, download CSV
 
-// ---------- STATE ----------
-let bilikTerbuka = {};   // menyimpan bilik mana yang sudah dibuka
+let bilikTerbuka = {};
 let timerAutoRefresh = null;
 
-// ---------- LOGIN ----------
 function bukaLoginAdmin() {
   document.getElementById("inputKodeAdmin").value = "";
   document.getElementById("errorAdmin").classList.add("hidden");
@@ -26,7 +21,6 @@ function cobaLoginAdmin() {
     document.getElementById("panelAdmin").classList.remove("hidden");
     muatAdmin();
 
-    // Auto-refresh tiap 5 detik (real-time)
     if (timerAutoRefresh) clearInterval(timerAutoRefresh);
     timerAutoRefresh = setInterval(muatAdmin, 5000);
   } else {
@@ -42,7 +36,6 @@ function keluarAdmin() {
   bilikTerbuka = {};
 }
 
-// ---------- MUAT DATA ADMIN ----------
 async function muatAdmin() {
   document.getElementById("adminTotal").textContent = dataSaya.totalSuara || 0;
   document.getElementById("adminPending").textContent = dataSaya.daftarSuara.length;
@@ -50,6 +43,7 @@ async function muatAdmin() {
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilRingkasan" })
     });
     const hasil = await jawaban.json();
@@ -60,8 +54,7 @@ async function muatAdmin() {
     document.getElementById("adminGolput").textContent = hasil.golput;
     document.getElementById("adminDuplikatJumlah").textContent = hasil.duplikat || 0;
     document.getElementById("adminLogCount").textContent = hasil.total + (hasil.duplikat || 0);
-    document.getElementById("adminLastUpdate").textContent =
-      new Date().toLocaleTimeString("id-ID");
+    document.getElementById("adminLastUpdate").textContent = new Date().toLocaleTimeString("id-ID");
 
     if (hasil.duplikat > 0) {
       document.getElementById("peringatanDuplikat").classList.remove("hidden");
@@ -77,17 +70,13 @@ async function muatAdmin() {
     perbaruiStatistikPerforma(hasil);
   } catch (e) {
     console.log("Gagal muat data:", e);
-    document.getElementById("adminHasil").innerHTML =
-      '<div class="result-card">Gagal muat data server. Cek koneksi.</div>';
   }
 }
 
-// ---------- HASIL PER KANDIDAT (dengan progress bar) ----------
 function tampilkanHasilServer(data) {
   const wadah = document.getElementById("adminHasil");
   const urut = [...(data.kandidat || [])].sort((a, b) => b.suara - a.suara);
 
-  // Winner card
   if (urut[0] && urut[0].suara > 0) {
     const seri = urut[1] && urut[0].suara === urut[1].suara;
     if (!seri) {
@@ -101,7 +90,6 @@ function tampilkanHasilServer(data) {
     document.getElementById("adminPemenang").classList.add("hidden");
   }
 
-  // Kartu hasil dengan progress bar
   wadah.innerHTML = urut.map((k, i) => {
     const persen = data.total > 0 ? (k.suara / data.total) * 100 : 0;
     const kelasWinner = (i === 0 && k.suara > 0) ? "winner" : "";
@@ -130,7 +118,6 @@ function tampilkanHasilServer(data) {
     `;
   }).join("");
 
-  // Kartu golput (kalau ada)
   if (data.golput > 0) {
     const persen = data.total > 0 ? (data.golput / data.total) * 100 : 0;
     wadah.innerHTML += `
@@ -159,7 +146,6 @@ function tampilkanHasilServer(data) {
   }
 }
 
-// ---------- DAFTAR BILIK ----------
 function tampilkanBilikServer(daftarBilik) {
   const wadah = document.getElementById("adminBilik");
   if (!daftarBilik || daftarBilik.length === 0) {
@@ -173,19 +159,18 @@ function tampilkanBilikServer(daftarBilik) {
       const persen = Math.min(100, Math.round((b.totalSuara || 0) / KAPASITAS_PER_BILIK * 100));
       return `
         <div class="bilik-kartu">
-          <span>📍 Bilik ${b.bilik}</span>
+          <span>Bilik ${b.bilik}</span>
           <span>${b.totalSuara || 0} / ${KAPASITAS_PER_BILIK} (${persen}%)</span>
         </div>
       `;
     }).join("");
 }
 
-// ---------- LOG DUPLIKAT ----------
 function tampilkanDuplikat(daftarDuplikat) {
   const wadah = document.getElementById("adminDuplikat");
 
   if (!daftarDuplikat || daftarDuplikat.length === 0) {
-    wadah.innerHTML = '<div class="log-entry">Tidak ada suara duplikat ✓</div>';
+    wadah.innerHTML = '<div class="log-entry">Tidak ada suara duplikat</div>';
     return;
   }
 
@@ -194,21 +179,20 @@ function tampilkanDuplikat(daftarDuplikat) {
     return `
       <div class="duplikat-kartu">
         <div>
-          <div class="duplikat-baris">📄 Baris #${d.baris}</div>
+          <div class="duplikat-baris">Baris #${d.baris}</div>
           <div class="duplikat-info">
-            Bilik ${d.bilik} · ${tgl.toLocaleDateString("id-ID")} ${tgl.toLocaleTimeString("id-ID")}
+            Bilik ${d.bilik} - ${tgl.toLocaleDateString("id-ID")} ${tgl.toLocaleTimeString("id-ID")}
           </div>
           <div class="duplikat-info">
             Pilihan: ${d.namaKandidat} (${d.jenisSuara})
           </div>
         </div>
-        <div class="duplikat-label">🚨 DUPLIKAT</div>
+        <div class="duplikat-label">DUPLIKAT</div>
       </div>
     `;
   }).join("");
 }
 
-// ---------- LOG VOTING TERBARU (10 terakhir) ----------
 function tampilkanLogTerbaru(daftarDuplikat, daftarBilik) {
   const wadah = document.getElementById("adminRecentLogs");
   if (!wadah) return;
@@ -220,7 +204,7 @@ function tampilkanLogTerbaru(daftarDuplikat, daftarBilik) {
       entri.push({
         waktu: b.terakhirAktif || b.waktuDaftar || Date.now(),
         bilik: b.bilik,
-        info: `${b.totalSuara} suara dari bilik ini`,
+        info: b.totalSuara + " suara dari bilik ini",
         tipe: "BILIK"
       });
     }
@@ -230,7 +214,7 @@ function tampilkanLogTerbaru(daftarDuplikat, daftarBilik) {
     entri.push({
       waktu: d.waktu,
       bilik: d.bilik,
-      info: `Duplikat: ${d.namaKandidat}`,
+      info: "Duplikat: " + d.namaKandidat,
       tipe: "DUPLIKAT"
     });
   });
@@ -249,57 +233,61 @@ function tampilkanLogTerbaru(daftarDuplikat, daftarBilik) {
     return `
       <div class="log-entry">
         <div class="log-time">${d.toLocaleDateString("id-ID")} ${d.toLocaleTimeString("id-ID")}</div>
-        <div class="log-candidate">Bilik ${e.bilik} · ${e.info}</div>
+        <div class="log-candidate">Bilik ${e.bilik} - ${e.info}</div>
         <div class="log-type" style="${gayaTipe}">${e.tipe}</div>
       </div>
     `;
   }).join("");
 }
 
-// ---------- STATISTIK PERFORMA ----------
 function perbaruiStatistikPerforma(data) {
-  // Suara per menit (perkiraan)
-  const now = Date.now();
-  const suaraMenit = (data.total || 0) > 0
-    ? Math.round(data.total / Math.max(1, (now - (data.waktuMulai || now)) / 60000))
-    : 0;
-  const elPerMin = document.getElementById("adminVotesPerMinute");
-  if (elPerMin) elPerMin.textContent = suaraMenit || 0;
-
-  // Storage lokal
   const ukuran = new Blob([JSON.stringify(dataSaya)]).size;
   const elStorage = document.getElementById("adminStorage");
   if (elStorage) elStorage.textContent = (ukuran / 1024).toFixed(1) + "KB";
 
-  // Belum terkirim
   const elPending = document.getElementById("adminPending");
   if (elPending) elPending.textContent = dataSaya.daftarSuara.length;
 
-  // Bilik aktif
   const elBilik = document.getElementById("adminTotalBilik");
   if (elBilik) elBilik.textContent = (data.bilik || []).length;
+
+  const elPerMin = document.getElementById("adminVotesPerMinute");
+  if (elPerMin) elPerMin.textContent = data.total > 0 ? Math.round(data.total / 60) : 0;
 }
 
-// ---------- RESET BILIK ----------
 async function resetBilik() {
   const konfirmasi = prompt(
-    'Ketik "RESET" untuk konfirmasi.\n\n' +
-    'Semua bilik akan dilepas dan minta daftar ulang.\n' +
-    'DATA SUARA TIDAK AKAN HILANG.'
+    "KONFIRMASI RESET TOTAL\n\n" +
+    "Ketik RESET TOTAL (huruf besar) untuk menghapus:\n" +
+    "Semua bilik terdaftar\n" +
+    "SEMUA DATA SUARA\n\n" +
+    "Tindakan ini TIDAK BISA DIBATALKAN!"
   );
-  if (konfirmasi !== "RESET") return;
+  if (konfirmasi !== "RESET TOTAL") {
+    notif("Reset dibatalkan", "warning");
+    return;
+  }
 
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
-      body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "resetBilik" })
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "resetTotal" })
     });
     const hasil = await jawaban.json();
 
     if (hasil.ok) {
-      notif("✅ Bilik direset. Suara tetap aman.");
+      notif("Semua data direset total");
       bilikTerbuka = {};
-      muatAdmin();
+
+      dataSaya.bilik = null;
+      dataSaya.idPerangkat = null;
+      dataSaya.daftarSuara = [];
+      dataSaya.totalSuara = 0;
+      simpanData();
+
+      keluarAdmin();
+      setTimeout(() => location.reload(), 1500);
     } else {
       notif("Gagal reset: " + hasil.error, "error");
     }
@@ -308,41 +296,253 @@ async function resetBilik() {
   }
 }
 
-// ---------- EXPORT CSV ----------
-function exportCSV() {
-  fetch(ALAMAT_SERVER, {
-    method: "POST",
-    body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilSemuaSuara" })
-  })
-  .then(r => r.json())
-  .then(hasil => {
-    if (!hasil.ok || !hasil.suara || hasil.suara.length === 0) {
-      notif("Belum ada data", "warning");
+async function exportCSV() {
+  try {
+    const jawaban = await fetch(ALAMAT_SERVER, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilSemuaSuara" })
+    });
+    const hasil = await jawaban.json();
+    if (!hasil.ok) throw new Error(hasil.error || "Gagal ambil data");
+
+    const html = buatLaporanHTML(hasil);
+    const tab = window.open("", "_blank");
+
+    if (!tab || tab.closed || typeof tab.closed === "undefined") {
+      unduhFile(html, "laporan-pilketos.html", "text/html");
+      notif("Popup diblokir. Laporan didownload sebagai file");
+    } else {
+      tab.document.write(html);
+      tab.document.close();
+      notif("Laporan siap! Klik Cetak atau Save PDF");
+    }
+  } catch (e) {
+    notif("Gagal buat laporan: " + e.message, "error");
+  }
+}
+
+async function downloadCSV() {
+  try {
+    const jawaban = await fetch(ALAMAT_SERVER, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilSemuaSuara" })
+    });
+    const hasil = await jawaban.json();
+    if (!hasil.ok) throw new Error(hasil.error || "Gagal ambil data");
+
+    const suara = hasil.suara || [];
+    if (suara.length === 0) {
+      notif("Belum ada data suara", "warning");
       return;
     }
 
-    let csv = "WAKTU,TANGGAL,BILIK,KANDIDAT,TIPE,STATUS\n";
-    hasil.suara.forEach(s => {
+    let csv = "No,Waktu,Tanggal,Jam,Bilik,Pilihan,Tipe,Status\n";
+
+    suara.forEach((s, i) => {
       const d = new Date(s.waktu);
-      csv += `${s.waktu},${d.toLocaleDateString("id-ID")},`
-           + `${s.bilik},"${s.namaKandidat}",${s.jenisSuara},${s.status}\n`;
+      const tgl = d.toLocaleDateString("id-ID");
+      const jam = d.toLocaleTimeString("id-ID");
+      const pilihan = String(s.namaKandidat).replace(/,/g, ";");
+      csv += `${i + 1},${s.waktu},${tgl},${jam},${s.bilik},"${pilihan}",${s.jenisSuara},${s.status}\n`;
     });
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "data_pilketos_" + Date.now() + ".csv";
-    link.click();
-    notif("Export berhasil ✓");
-  })
-  .catch(e => notif("Gagal export: " + e.message, "error"));
+    const ringkasan = [
+      "# LAPORAN PEMILIHAN KETUA OSIS",
+      "# Dicetak: " + new Date().toLocaleString("id-ID"),
+      "# Total Suara: " + hasil.total,
+      "# Golput: " + hasil.golput,
+      "# Duplikat: " + hasil.duplikat,
+      "# Pemilih Aktif: " + (hasil.total - hasil.golput),
+      "",
+      csv
+    ].join("\n");
+
+    unduhFile(ringkasan, "data-pilketos-" + Date.now() + ".csv", "text/csv");
+    notif("Data CSV berhasil didownload");
+  } catch (e) {
+    notif("Gagal download: " + e.message, "error");
+  }
 }
 
-// ============================================================
-// FITUR: HITUNG SUARA MANUAL PER BILIK
-// ============================================================
+function unduhFile(isi, namaFile, tipeMime) {
+  try {
+    const blob = new Blob(["\uFEFF" + isi], { type: tipeMime + ";charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = namaFile;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
 
-// ---------- TAMPILKAN GRID BILIK ----------
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 500);
+  } catch (e) {
+    const tab = window.open();
+    tab.document.write("<pre>" + isi + "</pre>");
+  }
+}
+
+function buatLaporanHTML(hasil) {
+  const sekarang = new Date().toLocaleString("id-ID");
+  const total = hasil.total || 0;
+  const golput = hasil.golput || 0;
+  const duplikat = hasil.duplikat || 0;
+  const aktif = total - golput;
+  const partisipasi = total > 0 ? Math.round((aktif / total) * 100) : 0;
+
+  const urut = [...(hasil.kandidat || [])].sort((a, b) => b.suara - a.suara);
+
+  let html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Laporan Pemilihan Ketua OSIS</title>
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: Arial, sans-serif; }
+        body { background:#f0f0f0; padding:20px; }
+        .laporan { background:white; max-width:900px; margin:0 auto; padding:30px; box-shadow:0 5px 20px rgba(0,0,0,0.15); }
+        h1 { text-align:center; color:#380864; margin-bottom:5px; font-size:22px; }
+        .sub { text-align:center; color:#666; font-size:13px; margin-bottom:25px; }
+        .header-bar { background:#380864; color:white; padding:10px 15px; font-weight:bold; margin:20px 0 15px; font-size:14px; border-radius:4px; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px; }
+        .box { background:#f8f9fa; padding:15px; border-radius:8px; border-left:4px solid #380864; text-align:center; }
+        .box-label { color:#666; font-size:12px; margin-bottom:5px; }
+        .box-value { color:#380864; font-size:22px; font-weight:bold; }
+        table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:15px; }
+        th { background:#380864; color:white; padding:10px 8px; text-align:left; }
+        td { padding:10px 8px; border-bottom:1px solid #eee; }
+        tr.pemenang { background:#fef3c7; }
+        tr.pemenang td { font-weight:bold; color:#6E0D4D; }
+        .footer { text-align:center; margin-top:30px; padding-top:15px; border-top:1px solid #ddd; color:#999; font-size:11px; }
+        .aksi { text-align:center; margin-top:20px; }
+        .aksi button { padding:12px 25px; background:#380864; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin:5px; font-size:14px; }
+        .aksi button:hover { background:#6E0D4D; }
+        @media print { body { background:white; padding:0; } .laporan { box-shadow:none; padding:15px; } .aksi { display:none; } }
+      </style>
+    </head>
+    <body>
+      <div class="laporan">
+        <h1>LAPORAN LENGKAP PEMILIHAN KETUA OSIS</h1>
+        <div class="sub">Sistem Voting Digital</div>
+        <div class="sub">Dicetak: ${sekarang}</div>
+
+        <div class="header-bar">RINGKASAN HASIL</div>
+        <div class="grid">
+          <div class="box"><div class="box-label">Total Suara</div><div class="box-value">${total}</div></div>
+          <div class="box"><div class="box-label">Pemilih Aktif</div><div class="box-value">${aktif}</div></div>
+          <div class="box"><div class="box-label">Golput</div><div class="box-value">${golput}</div></div>
+          <div class="box"><div class="box-label">Partisipasi</div><div class="box-value">${partisipasi}%</div></div>
+        </div>
+
+        <div class="header-bar">HASIL PER KANDIDAT</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Nama Kandidat</th><th>Kelas</th>
+              <th>Jumlah Suara</th><th>Persentase</th><th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  urut.forEach((k, i) => {
+    const persen = total > 0 ? ((k.suara / total) * 100).toFixed(1) : "0.0";
+    const kelas = (i === 0 && k.suara > 0) ? "pemenang" : "";
+    const ket = (i === 0 && k.suara > 0) ? "PEMENANG" : "";
+    html += `
+      <tr class="${kelas}">
+        <td>${i + 1}</td>
+        <td>${k.nama}</td>
+        <td>${cariKelas(k.nama)}</td>
+        <td>${k.suara}</td>
+        <td>${persen}%</td>
+        <td>${ket}</td>
+      </tr>
+    `;
+  });
+
+  if (golput > 0) {
+    const persen = total > 0 ? ((golput / total) * 100).toFixed(1) : "0.0";
+    html += `
+      <tr>
+        <td>-</td><td>GOLPUT</td><td>-</td>
+        <td>${golput}</td><td>${persen}%</td><td>Abstain</td>
+      </tr>
+    `;
+  }
+
+  if (duplikat > 0) {
+    html += `
+      <tr style="background:#fee2e2;color:#991b1b;">
+        <td colspan="3"><b>Suara Duplikat (tidak dihitung)</b></td>
+        <td>${duplikat}</td>
+        <td colspan="2">Tidak masuk perhitungan</td>
+      </tr>
+    `;
+  }
+
+  html += `
+          </tbody>
+        </table>
+
+        <div class="header-bar">DAFTAR BILIK</div>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Bilik</th><th>Jumlah Suara</th>
+              <th>Kapasitas</th><th>Terpakai</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  (hasil.bilik || [])
+    .sort((a, b) => String(a.bilik).localeCompare(String(b.bilik)))
+    .forEach((b, i) => {
+      const persen = Math.round((b.totalSuara || 0) / KAPASITAS_PER_BILIK * 100);
+      html += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>Bilik ${b.bilik}</td>
+          <td>${b.totalSuara || 0}</td>
+          <td>${KAPASITAS_PER_BILIK}</td>
+          <td>${persen}%</td>
+        </tr>
+      `;
+    });
+
+  html += `
+          </tbody>
+        </table>
+
+        <div class="footer">
+          Dokumen ini dicetak otomatis dari Sistem Pemilihan Ketua OSIS<br>
+          ${sekarang}
+        </div>
+
+        <div class="aksi">
+          <button onclick="window.print()">Cetak / Save PDF</button>
+          <button onclick="window.close()">Tutup</button>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return html;
+}
+
+function cariKelas(nama) {
+  const k = KANDIDAT.find(x => x.nama === nama);
+  return k ? k.kelas : "-";
+}
+
 function muatHitungBilik(daftarBilik) {
   const wadah = document.getElementById("hitungBilikGrid");
   if (!wadah) return;
@@ -363,10 +563,10 @@ function muatHitungBilik(daftarBilik) {
       return `
         <div class="bilik-hitung-kartu ${terbuka ? 'terbuka' : ''}"
              onclick="bukaBuktiBilik('${b.bilik}')">
-          <div class="bilik-hitung-nomor">📍 Bilik ${b.bilik}</div>
+          <div class="bilik-hitung-nomor">Bilik ${b.bilik}</div>
           <div class="bilik-hitung-jumlah">${b.totalSuara || 0} suara</div>
           <div class="bilik-hitung-status">
-            ${terbuka ? '✅ Sudah dibuka' : '🔒 Klik untuk buka'}
+            ${terbuka ? 'Sudah dibuka' : 'Klik untuk buka'}
           </div>
         </div>
       `;
@@ -375,16 +575,15 @@ function muatHitungBilik(daftarBilik) {
   cekSemuaBilikTerbuka(daftarBilik);
 }
 
-// ---------- BUKA BUKTI SATU BILIK ----------
 async function bukaBuktiBilik(bilik) {
   document.getElementById("judulBuktiBilik").textContent = "Bukti Suara Bilik " + bilik;
-  document.getElementById("buktiList").innerHTML =
-    '<div class="bilik-kartu">Memuat bukti suara...</div>';
+  document.getElementById("buktiList").innerHTML = '<div class="bilik-kartu">Memuat bukti suara...</div>';
   tampilkan("popupBuktiBilik");
 
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         kunci: KUNCI_SERVER,
         aksi: "ambilSuaraBilik",
@@ -394,14 +593,13 @@ async function bukaBuktiBilik(bilik) {
     const hasil = await jawaban.json();
     if (!hasil.ok) throw new Error(hasil.error || "Gagal ambil data");
 
-    tampilkanBuktiBilik(hasil.suara || []);
-
+    tampilkanBuktiBilik(hasil.suara || [], bilik);
     bilikTerbuka[bilik] = true;
 
-    // Refresh grid
     try {
       const ulang = await fetch(ALAMAT_SERVER, {
         method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilRingkasan" })
       });
       const dataBaru = await ulang.json();
@@ -414,8 +612,7 @@ async function bukaBuktiBilik(bilik) {
   }
 }
 
-// ---------- TAMPILKAN ISI BUKTI ----------
-function tampilkanBuktiBilik(daftarSuara) {
+function tampilkanBuktiBilik(daftarSuara, bilik) {
   const asli = daftarSuara.filter(s => s.status === "ASLI").length;
   const duplikat = daftarSuara.filter(s => s.status === "DUPLIKAT").length;
 
@@ -430,27 +627,67 @@ function tampilkanBuktiBilik(daftarSuara) {
     return;
   }
 
-  wadah.innerHTML = daftarSuara.map((s, i) => {
+  const rekap = {};
+  daftarSuara.filter(s => s.status === "ASLI").forEach(s => {
+    rekap[s.namaKandidat] = (rekap[s.namaKandidat] || 0) + 1;
+  });
+
+  let html = `
+    <div class="bukti-header-bilik">
+      <h4>Rekap Suara Bilik ${bilik}</h4>
+      <table class="tabel-bukti">
+        <thead>
+          <tr>
+            <th>Pilihan</th>
+            <th>Jumlah</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  Object.entries(rekap).forEach(([nama, jumlah]) => {
+    html += `<tr><td>${nama}</td><td><b>${jumlah}</b></td></tr>`;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+
+    <h4 style="margin-top:15px;color:#380864;">Detail Suara (Bukti Asli)</h4>
+    <table class="tabel-bukti">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Waktu</th>
+          <th>Pilihan</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  daftarSuara.forEach((s, i) => {
     const d = new Date(s.waktu);
-    const kelasDup = s.status === "DUPLIKAT" ? "duplikat" : "";
-    return `
-      <div class="bukti-baris ${kelasDup}">
-        <div class="bukti-nomor">#${i + 1}</div>
-        <div class="bukti-waktu">
-          ${d.toLocaleDateString("id-ID")} ${d.toLocaleTimeString("id-ID")}
-        </div>
-        <div class="bukti-pilihan">${s.namaKandidat}</div>
-        <div class="bukti-status ${kelasDup}">${s.status}</div>
-      </div>
+    const merah = s.status === "DUPLIKAT" ? "background:#fee2e2;color:#991b1b;" : "";
+    html += `
+      <tr style="${merah}">
+        <td>${i + 1}</td>
+        <td>${d.toLocaleDateString("id-ID")} ${d.toLocaleTimeString("id-ID")}</td>
+        <td>${s.namaKandidat}</td>
+        <td>${s.status}</td>
+      </tr>
     `;
-  }).join("");
+  });
+
+  html += `</tbody></table>`;
+  wadah.innerHTML = html;
 }
 
 function tutupBuktiBilik() {
   sembunyikan("popupBuktiBilik");
 }
 
-// ---------- CEK SEMUA BILIK SUDAH DIBUKA ----------
 function cekSemuaBilikTerbuka(daftarBilik) {
   const tombol = document.getElementById("tombolHitungTotal");
   if (!tombol) return;
@@ -460,17 +697,16 @@ function cekSemuaBilikTerbuka(daftarBilik) {
 
   if (semuaTerbuka) {
     tombol.disabled = false;
-    tombol.textContent = "🧮 Hitung Total Keseluruhan";
+    tombol.textContent = "Hitung Total Keseluruhan";
     tombol.classList.remove("terkunci");
   } else {
     const sisa = daftarBilik.filter(b => !bilikTerbuka[b.bilik]).length;
     tombol.disabled = true;
-    tombol.textContent = `🔒 Buka ${sisa} bilik lagi`;
+    tombol.textContent = "Buka " + sisa + " bilik lagi";
     tombol.classList.add("terkunci");
   }
 }
 
-// ---------- HITUNG TOTAL KESELURUHAN ----------
 async function hitungTotalKeseluruhan() {
   const wadah = document.getElementById("hitungTotalIsi");
   wadah.innerHTML = "<p>Menghitung total...</p>";
@@ -479,6 +715,7 @@ async function hitungTotalKeseluruhan() {
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ kunci: KUNCI_SERVER, aksi: "ambilRingkasan" })
     });
     const hasil = await jawaban.json();
@@ -494,6 +731,10 @@ function tampilkanHitungTotal(data) {
   const wadah = document.getElementById("hitungTotalIsi");
   const urut = [...(data.kandidat || [])].sort((a, b) => b.suara - a.suara);
 
+  const sekarang = new Date().toLocaleString("id-ID");
+  const aktif = data.total - data.golput;
+  const partisipasi = data.total > 0 ? Math.round((aktif / data.total) * 100) : 0;
+
   let html = "";
 
   if (urut[0] && urut[0].suara > 0) {
@@ -502,7 +743,7 @@ function tampilkanHitungTotal(data) {
       const persen = ((urut[0].suara / data.total) * 100).toFixed(1);
       html += `
         <div class="pemenang-total">
-          🏆 <b>PEMENANG:</b> ${urut[0].nama}
+          PEMENANG: ${urut[0].nama}
           <div style="font-size:0.9rem;margin-top:5px;color:#6E0D4D;">
             ${urut[0].suara} suara (${persen}%)
           </div>
@@ -511,7 +752,7 @@ function tampilkanHitungTotal(data) {
     } else {
       html += `
         <div class="peringatan" style="margin-bottom:15px;">
-          ⚖️ <b>HASIL SERI!</b> ${urut[0].nama} dan ${urut[1].nama}
+          HASIL SERI! ${urut[0].nama} dan ${urut[1].nama}
           sama-sama ${urut[0].suara} suara
         </div>
       `;
@@ -519,35 +760,36 @@ function tampilkanHitungTotal(data) {
   }
 
   html += `
-    <div class="hitung-total-statistik">
-      <div class="stat-box">
-        <div class="stat-angka">${data.total}</div>
-        <div class="stat-label">Total Suara (ASLI)</div>
+    <div class="header-bar-laporan">RINGKASAN HASIL PEMILIHAN</div>
+    <div class="grid-laporan">
+      <div class="box-laporan">
+        <div class="box-label">Total Suara Masuk</div>
+        <div class="box-value">${data.total}</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-angka">${data.total - data.golput}</div>
-        <div class="stat-label">Memilih Kandidat</div>
+      <div class="box-laporan">
+        <div class="box-label">Total Pemilih Aktif</div>
+        <div class="box-value">${aktif}</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-angka">${data.golput}</div>
-        <div class="stat-label">Golput</div>
+      <div class="box-laporan">
+        <div class="box-label">Golput</div>
+        <div class="box-value">${data.golput}</div>
       </div>
-      <div class="stat-box merah">
-        <div class="stat-angka">${data.duplikat || 0}</div>
-        <div class="stat-label">Duplikat</div>
+      <div class="box-laporan">
+        <div class="box-label">Persentase Partisipasi</div>
+        <div class="box-value">${partisipasi}%</div>
       </div>
     </div>
-  `;
 
-  html += `
-    <h4 style="color:#380864;margin:20px 0 10px;">Hasil per Kandidat</h4>
-    <table class="tabel-total">
+    <div class="header-bar-laporan">HASIL PER KANDIDAT</div>
+    <table class="tabel-laporan">
       <thead>
         <tr>
-          <th>Peringkat</th>
+          <th>No</th>
           <th>Nama Kandidat</th>
+          <th>Kelas</th>
           <th>Jumlah</th>
           <th>Persentase</th>
+          <th>Keterangan</th>
         </tr>
       </thead>
       <tbody>
@@ -556,12 +798,15 @@ function tampilkanHitungTotal(data) {
   urut.forEach((k, i) => {
     const persen = data.total > 0 ? ((k.suara / data.total) * 100).toFixed(1) : "0.0";
     const kelas = (i === 0 && k.suara > 0) ? "baris-pemenang" : "";
+    const ket = (i === 0 && k.suara > 0) ? "PEMENANG" : "";
     html += `
       <tr class="${kelas}">
         <td>${i + 1}</td>
         <td><b>${k.nama}</b></td>
+        <td>${cariKelas(k.nama)}</td>
         <td>${k.suara}</td>
         <td>${persen}%</td>
+        <td>${ket}</td>
       </tr>
     `;
   });
@@ -572,13 +817,37 @@ function tampilkanHitungTotal(data) {
       <tr>
         <td>-</td>
         <td><b>GOLPUT</b></td>
+        <td>-</td>
         <td>${data.golput}</td>
         <td>${persen}%</td>
+        <td>Abstain</td>
       </tr>
     `;
   }
 
-  html += `</tbody></table>`;
+  if (data.duplikat > 0) {
+    html += `
+      <tr style="background:#fee2e2;color:#991b1b;">
+        <td colspan="3"><b>Suara Duplikat (tidak dihitung)</b></td>
+        <td>${data.duplikat}</td>
+        <td colspan="2">Tidak masuk perhitungan</td>
+      </tr>
+    `;
+  }
+
+  html += `
+      </tbody>
+    </table>
+    <div class="footer-laporan">
+      Dicetak otomatis dari Sistem Pemilihan Ketua OSIS - ${sekarang}
+    </div>
+    <div style="text-align:center;margin-top:15px;">
+      <button class="tb-hitung" onclick="window.print()" style="font-size:0.9rem;padding:12px 25px;">
+        Cetak / Save PDF
+      </button>
+    </div>
+  `;
+
   wadah.innerHTML = html;
 }
 

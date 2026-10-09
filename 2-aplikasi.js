@@ -1,3 +1,6 @@
+// Logika utama voting
+// Kode akses, daftar bilik, pilih kandidat, kirim suara
+
 let dataSaya = {
   bilik: null,
   idPerangkat: null,
@@ -6,7 +9,8 @@ let dataSaya = {
   pilihanSekarang: null
 };
 
-// 1) SAAT HALAMAN DIBUKA
+let timerCekStatus = null;
+
 document.addEventListener("DOMContentLoaded", () => {
   const simpan = localStorage.getItem("pilketos");
   if (simpan) {
@@ -30,14 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// 2) KODE AKSES
 function cobaMasuk() {
   const kode = document.getElementById("inputKodeAkses").value;
   if (kode === KODE_AKSES) {
     localStorage.setItem("aksesDiberikan", "true");
     sembunyikan("popupKodeAkses");
     bukaHalamanUtama();
-    notif("Akses diterima ✓");
+    notif("Akses diterima");
   } else {
     document.getElementById("errorKode").classList.remove("hidden");
     document.getElementById("inputKodeAkses").value = "";
@@ -54,20 +57,20 @@ function bukaHalamanUtama() {
   if (!dataSaya.bilik) {
     tampilkan("popupDaftarBilik");
   } else {
-    document.getElementById("labelBilik").textContent = "📍 Bilik " + dataSaya.bilik;
+    document.getElementById("labelBilik").textContent = "Bilik " + dataSaya.bilik;
   }
 
   perbaruiTotal();
   mulaiKirimOtomatis();
+  mulaiCekStatusBilik();
 }
 
-// 3) DAFTAR BILIK
 async function daftarkanBilik() {
   const input = document.getElementById("inputNomorBilik");
   const nomor = parseInt(input.value, 10);
 
   if (!nomor || nomor < 1 || nomor > MAKS_BILIK) {
-    document.getElementById("errorBilik").textContent = `Nomor bilik harus 1-${MAKS_BILIK}`;
+    document.getElementById("errorBilik").textContent = "Nomor bilik harus 1 sampai " + MAKS_BILIK;
     document.getElementById("errorBilik").classList.remove("hidden");
     return;
   }
@@ -77,6 +80,7 @@ async function daftarkanBilik() {
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         kunci: KUNCI_SERVER,
         aksi: "daftarBilik",
@@ -92,7 +96,7 @@ async function daftarkanBilik() {
       return;
     }
   } catch (e) {
-    notif("Offline — bilik diverifikasi saat online", "warning");
+    notif("Offline, bilik diverifikasi saat online", "warning");
   }
 
   dataSaya.bilik = String(nomor).padStart(2, "0");
@@ -100,18 +104,50 @@ async function daftarkanBilik() {
   simpanData();
 
   sembunyikan("popupDaftarBilik");
-  document.getElementById("labelBilik").textContent = "📍 Bilik " + dataSaya.bilik;
-  notif("Bilik " + dataSaya.bilik + " siap ✓");
+  document.getElementById("labelBilik").textContent = "Bilik " + dataSaya.bilik;
+  notif("Bilik " + dataSaya.bilik + " siap");
 }
 
-// 4) TAMPILKAN KANDIDAT
+function mulaiCekStatusBilik() {
+  if (timerCekStatus) clearInterval(timerCekStatus);
+
+  timerCekStatus = setInterval(async () => {
+    if (!dataSaya.bilik || !dataSaya.idPerangkat) return;
+    if (!navigator.onLine) return;
+
+    try {
+      const jawaban = await fetch(ALAMAT_SERVER, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          kunci: KUNCI_SERVER,
+          aksi: "cekBilik",
+          idPerangkat: dataSaya.idPerangkat,
+          bilik: dataSaya.bilik
+        })
+      });
+      const hasil = await jawaban.json();
+
+      if (hasil.ok && hasil.terdaftar === false) {
+        dataSaya.bilik = null;
+        dataSaya.idPerangkat = null;
+        simpanData();
+
+        document.getElementById("labelBilik").textContent = "";
+        notif("Bilik direset admin. Silakan daftar ulang.", "warning");
+        tampilkan("popupDaftarBilik");
+      }
+    } catch (_) {}
+  }, 15000);
+}
+
 function tampilkanKandidat() {
   const wadah = document.getElementById("kandidatGrid");
   wadah.innerHTML = KANDIDAT.map(k => `
     <div class="kandidat-kartu">
       <div class="kandidat-nomor">#${k.id}</div>
       <img class="kandidat-foto" src="${k.foto}" alt="${k.nama}"
-           onerror="this.src='1-gambar/foto-kosong.png'" />
+           onerror="this.src='foto-kosong.png'" />
       <h3 class="kandidat-nama">${k.nama}</h3>
       <p class="kandidat-kelas">${k.kelas}</p>
       <p class="kandidat-visi">${k.visi}</p>
@@ -132,10 +168,9 @@ function tampilkanSponsor() {
   `).join("");
 }
 
-//5) PROSES PILIH
 function pilihKandidat(id, nama) {
   if (!dataSaya.bilik) {
-    notif("Daftarkan bilik dulu!", "error");
+    notif("Daftarkan bilik dulu", "error");
     tampilkan("popupDaftarBilik");
     return;
   }
@@ -146,7 +181,7 @@ function pilihKandidat(id, nama) {
 
 function pilihGolput() {
   if (!dataSaya.bilik) {
-    notif("Daftarkan bilik dulu!", "error");
+    notif("Daftarkan bilik dulu", "error");
     tampilkan("popupDaftarBilik");
     return;
   }
@@ -170,7 +205,6 @@ function konfirmasiGolput() {
   simpanSuara();
 }
 
-//6) SIMPAN SUARA
 function simpanSuara() {
   const pilihan = dataSaya.pilihanSekarang;
   if (!pilihan) return;
@@ -190,7 +224,6 @@ function simpanSuara() {
   dataSaya.daftarSuara.push(suara);
   dataSaya.totalSuara++;
   simpanData();
-
   perbaruiTotal();
 
   setTimeout(() => {
@@ -205,13 +238,14 @@ function simpanSuara() {
   }, 800);
 }
 
-// 7) KIRIM KE SERVER
 async function kirimKeServer() {
   if (dataSaya.daftarSuara.length === 0) return;
+  if (!dataSaya.bilik || !dataSaya.idPerangkat) return;
 
   try {
     const jawaban = await fetch(ALAMAT_SERVER, {
       method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         kunci: KUNCI_SERVER,
         aksi: "kirimSuara",
@@ -225,7 +259,7 @@ async function kirimKeServer() {
     if (hasil.ok) {
       dataSaya.daftarSuara = [];
       simpanData();
-      console.log("✓ Suara terkirim:", hasil.masuk, "asli,", hasil.duplikat, "duplikat");
+      console.log("Suara terkirim:", hasil.masuk, "asli,", hasil.duplikat, "duplikat");
     }
   } catch (e) {
     console.log("Koneksi gagal, coba lagi nanti");
@@ -250,7 +284,6 @@ function mulaiKirimOtomatis() {
   });
 }
 
-// 8) TOTAL SUARA
 function perbaruiTotal() {
   const total = dataSaya.totalSuara || 0;
   document.getElementById("teksTotal").textContent = "Total Pemilih: " + total;
@@ -260,7 +293,6 @@ function perbaruiTotal() {
   }
 }
 
-// 9) ALAT BANTU
 function simpanData() {
   localStorage.setItem("pilketos", JSON.stringify(dataSaya));
 }
