@@ -1376,3 +1376,13 @@ body {
   .bilik-hitung-grid { grid-template-columns: 1fr; }
   .winner-icon { width: 70px; height: 70px; }
 }
+
+.pesan-kosong {
+  background: var(--bg-lembut);
+  color: var(--teks-sedang);
+  padding: 20px;
+  border-radius: var(--radius-sedang);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+                }
