@@ -3,6 +3,8 @@
 Aplikasi web untuk pemilihan ketua OSIS secara digital.
 Data suara otomatis tersimpan di Google Sheets.
 
+kalian cukup ubah di style.css, 1-pengaturan, sama upload foto dengan nama yang sama. kayak kandidat-1 atau logo-mpk. Jagan sampai beda ketikan.
+
 ## Fitur
 
 - Maksimal 10 bilik
