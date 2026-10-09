@@ -174,8 +174,14 @@ function pilihKandidat(id, nama) {
     tampilkan("popupDaftarBilik");
     return;
   }
-  dataSaya.pilihanSekarang = { id, nama, jenis: "KANDIDAT" };
+
+  const kandidat = KANDIDAT.find(k => k.id === id);
+  const foto = kandidat ? kandidat.foto : "";
+
+  dataSaya.pilihanSekarang = { id, nama, foto, jenis: "KANDIDAT" };
   document.getElementById("namaDipilih").textContent = nama;
+  document.getElementById("fotoDipilih").src = foto;
+  document.getElementById("fotoDipilih").alt = nama;
   tampilkan("popupKonfirmasi");
 }
 
@@ -191,6 +197,7 @@ function pilihGolput() {
 
 function batalPilih() {
   dataSaya.pilihanSekarang = null;
+  document.getElementById("fotoDipilih").src = "";
   sembunyikan("popupKonfirmasi");
   sembunyikan("popupKonfirmasiGolput");
 }

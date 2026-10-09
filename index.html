@@ -70,6 +70,7 @@
 <div id="popupKonfirmasi" class="popup hidden">
   <div class="popup-isi">
     <h3>Konfirmasi Pilihan</h3>
+    <img id="fotoDipilih" class="foto-dipilih" src="" alt="" />
     <p>Apakah Anda yakin ingin memilih <b id="namaDipilih"></b>?</p>
     <div class="tombol-baris">
       <button class="tombol-batal" onclick="batalPilih()">Batal</button>
@@ -111,7 +112,7 @@
 
 <div id="popupSukses" class="popup hidden">
   <div class="popup-isi tengah">
-    <div class="cek-lingkaran">✓</div>
+    <div class="cek-lingkaran">&#10003;</div>
     <h3>Suara Berhasil Dikirim!</h3>
     <p>Terima kasih. Silakan pemilih berikutnya.</p>
   </div>
@@ -165,15 +166,6 @@
     Semua suara tetap tersimpan di Google Sheets sebagai bukti asli.
   </div>
 
-  <div id="adminPemenang" class="winner-card hidden">
-    <div class="winner-icon">Trophy</div>
-    <h3>Pemenang Sementara</h3>
-    <div class="winner-name" id="adminPemenangNama"></div>
-    <div class="winner-votes" id="adminPemenangVotes"></div>
-  </div>
-
-  <div id="adminHasil" class="results-container"></div>
-
   <div class="recent-logs-section">
     <h3>Daftar Bilik Terdaftar</h3>
     <div id="adminBilik" class="recent-logs">
@@ -224,7 +216,7 @@
     </div>
 
     <div id="buktiList" class="bukti-list">
-      <div class="bilik-kartu">Memuat bukti suara...</div>
+      <div class="pesan-kosong">Memuat bukti suara...</div>
     </div>
 
     <button class="tombol-utama" onclick="tutupBuktiBilik()" style="margin-top:20px;">Tutup</button>

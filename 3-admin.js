@@ -62,7 +62,6 @@ async function muatAdmin() {
       document.getElementById("peringatanDuplikat").classList.add("hidden");
     }
 
-    tampilkanHasilServer(hasil);
     tampilkanBilikServer(hasil.bilik);
     tampilkanDuplikat(hasil.daftarDuplikat || []);
     muatHitungBilik(hasil.bilik || []);
@@ -70,79 +69,6 @@ async function muatAdmin() {
     perbaruiStatistikPerforma(hasil);
   } catch (e) {
     console.log("Gagal muat data:", e);
-  }
-}
-
-function tampilkanHasilServer(data) {
-  const wadah = document.getElementById("adminHasil");
-  const urut = [...(data.kandidat || [])].sort((a, b) => b.suara - a.suara);
-
-  if (urut[0] && urut[0].suara > 0) {
-    const seri = urut[1] && urut[0].suara === urut[1].suara;
-    if (!seri) {
-      document.getElementById("adminPemenang").classList.remove("hidden");
-      document.getElementById("adminPemenangNama").textContent = urut[0].nama;
-      document.getElementById("adminPemenangVotes").textContent = urut[0].suara + " suara";
-    } else {
-      document.getElementById("adminPemenang").classList.add("hidden");
-    }
-  } else {
-    document.getElementById("adminPemenang").classList.add("hidden");
-  }
-
-  wadah.innerHTML = urut.map((k, i) => {
-    const persen = data.total > 0 ? (k.suara / data.total) * 100 : 0;
-    const kelasWinner = (i === 0 && k.suara > 0) ? "winner" : "";
-    return `
-      <div class="result-card">
-        <div class="result-header">
-          <div class="result-info">
-            <div class="result-rank ${kelasWinner}">${i + 1}</div>
-            <div class="result-name">${k.nama}</div>
-          </div>
-          <div class="result-votes">
-            <div class="vote-count">${k.suara}</div>
-            <div class="vote-label">suara</div>
-          </div>
-        </div>
-        <div class="progress-section">
-          <div class="progress-info">
-            <span>${persen.toFixed(1)}%</span>
-            <span>${k.suara} dari ${data.total} suara</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${persen}%"></div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  if (data.golput > 0) {
-    const persen = data.total > 0 ? (data.golput / data.total) * 100 : 0;
-    wadah.innerHTML += `
-      <div class="result-card">
-        <div class="result-header">
-          <div class="result-info">
-            <div class="result-rank">-</div>
-            <div class="result-name">Golput</div>
-          </div>
-          <div class="result-votes">
-            <div class="vote-count">${data.golput}</div>
-            <div class="vote-label">suara</div>
-          </div>
-        </div>
-        <div class="progress-section">
-          <div class="progress-info">
-            <span>${persen.toFixed(1)}%</span>
-            <span>${data.golput} dari ${data.total} suara</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${persen}%"></div>
-          </div>
-        </div>
-      </div>
-    `;
   }
 }
 
@@ -551,7 +477,7 @@ function muatHitungBilik(daftarBilik) {
   if (info) info.textContent = (daftarBilik?.length || 0) + " bilik terdaftar";
 
   if (!daftarBilik || daftarBilik.length === 0) {
-    wadah.innerHTML = '<div class="bilik-kartu">Belum ada bilik terdaftar</div>';
+    wadah.innerHTML = '<div class="pesan-kosong">Belum ada bilik terdaftar</div>';
     document.getElementById("tombolHitungTotal").disabled = true;
     return;
   }
@@ -577,7 +503,7 @@ function muatHitungBilik(daftarBilik) {
 
 async function bukaBuktiBilik(bilik) {
   document.getElementById("judulBuktiBilik").textContent = "Bukti Suara Bilik " + bilik;
-  document.getElementById("buktiList").innerHTML = '<div class="bilik-kartu">Memuat bukti suara...</div>';
+  document.getElementById("buktiList").innerHTML = '<div class="pesan-kosong">Memuat bukti suara...</div>';
   tampilkan("popupBuktiBilik");
 
   try {
@@ -608,7 +534,7 @@ async function bukaBuktiBilik(bilik) {
 
   } catch (e) {
     document.getElementById("buktiList").innerHTML =
-      '<div class="duplikat-info">Gagal memuat bukti: ' + e.message + '</div>';
+      '<div class="pesan-kosong">Gagal memuat bukti: ' + e.message + '</div>';
   }
 }
 

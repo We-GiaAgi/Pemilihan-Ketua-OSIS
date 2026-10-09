@@ -5,7 +5,7 @@
 const KODE_AKSES = "PILKET25";
 const KODE_ADMIN = "ADMINMPK25";
 
-// Alamat server (dari Google Apps Script)
+// Alamat server dari Google Apps Script
 const ALAMAT_SERVER = "https://script.google.com/macros/s/AKfycbxmeFVVK2fs2vYk_-Hr3PGYJhEJtCM4Eb_CPvQW46HuXkFB8qDQOOUw8Hk67ObRBGqkOA/exec";
 const KUNCI_SERVER  = "MPKSman1.PLN";
 
